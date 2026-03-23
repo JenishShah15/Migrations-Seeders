@@ -1,4 +1,5 @@
 
+import { Category } from '../../src/catalog/entities/category.entity';
 import {DataSource} from 'typeorm';
 
 export const AppDataSource = new DataSource({
@@ -8,7 +9,7 @@ export const AppDataSource = new DataSource({
     username : 'postgres',
     password : 'jenish_015',
     database : 'accounting_db',
-    entities : [],
+    entities : [Category],
     synchronize : false,
     migrations : ['src/database/migrations/*.ts'],
 

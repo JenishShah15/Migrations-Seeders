@@ -6,7 +6,7 @@ export class createCategoryDto{
     
     @IsNotEmpty()
     @IsString()
-    @MinLength(5)
+    @MinLength(2)
     @MaxLength(200)
     @ApiProperty({
         default: "Category Name",

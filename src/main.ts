@@ -14,10 +14,9 @@ async function bootstrap() {
 );
 
    const config = new DocumentBuilder()
-    .setTitle('Accounting System')
-    .setDescription('The Accounting System API description')
+    .setTitle('Product Page System')
+    .setDescription('The Product Page System API description')
     .setVersion('1.0')
-    .addTag('category')
     .build();
   const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, documentFactory);

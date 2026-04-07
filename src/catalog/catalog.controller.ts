@@ -36,9 +36,9 @@ export class CatalogController {
   // Product Controllers
 
   @Post('product')
-  async createProduct(@Body() createproductdto : createproductdto)
+  async createProduct(@Body() Createproductdto : createproductdto)
   {
-    return await this.catalogService.createProdutc(createproductdto);
+    return await this.catalogService.createProdut(Createproductdto);
   }
   
   @ApiQuery({name : "productid",example : '7b5b27a6-569e-41cb-a71c-ecc738e57a7d'})

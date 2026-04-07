@@ -12,33 +12,36 @@ import { Category } from './category.entity';
 @Entity('Products')
 export class Product {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id?: string;
+
+  @Column({ nullable: true, length: 200 })
+  userId?: string;
 
   @Column({ nullable: false, length: 200 })
-  name: string;
+  name?: string;
 
   @Column({ nullable: false, length: 200 })
-  brandname: string;
+  brandname?: string;
 
   @Column('text', { nullable: false })
-  description: string;
+  description?: string;
 
   @Column('decimal', { nullable: false })
-  price: number;
+  price?: number;
 
-  @Column({ default: 0 })
-  rating: number;
+  @Column('decimal',{ default: 0 })
+  rating?: number;
 
   @Column({ default: true })
-  isActive: boolean;
+  isActive?: boolean;
 
   @ManyToOne(() => Category, (category) => category.id, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'category_id' })
-  category: Category;
+  category?: Category;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt?: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt?: Date;
 }

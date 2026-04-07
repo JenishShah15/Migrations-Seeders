@@ -4,6 +4,10 @@ import { Repository, TreeRepository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { createCategoryDto } from './dto/createcategory.dto';
 import { Product } from './entities/product.entity';
+import {
+  createproductdto,
+  createproductdto as CreateProductdto,
+} from './dto/createproduct.dto';
 
 @Injectable()
 export class CatalogService {
@@ -70,31 +74,38 @@ export class CatalogService {
     return await this.categoryRepository.findAncestorsTree(category);
   }
 
-  async createProdutc(createproductdto) {
+  async createProdut(CreateProductDto: CreateProductdto) {
     try {
       const category = await this.categoryRepository.findOne({
-        where: { id: createproductdto.category },
+        where: { id: CreateProductDto.category_id },
       });
       if (!category) {
         throw new NotFoundException('Category not found');
       }
+
       const product = this.productRepository.create({
-        name: createproductdto.name,
-        brandname: createproductdto.brandname,
-        description: createproductdto.description,
-        price: createproductdto.price,
-        rating: createproductdto.rating,
-        isActive: createproductdto.isActive,
+        name: CreateProductDto.name,
+        brandname: CreateProductDto.brandname,
+        description: CreateProductDto.description,
+        price: CreateProductDto.price,
+        rating: CreateProductDto.rating,
+        isActive: CreateProductDto.isActive,
         category: category,
+        userId: CreateProductDto.userId,
       });
+      
+      console.log('Successfull product creation', CreateProductDto);// working
       const createdProduct = await this.productRepository.save(product);
+      console.log('Successfull product creation', CreateProductDto);//not working
+
       return {
         message: 'Product created succesfully',
         success: true,
         statusCode: 201,
         data: createdProduct,
       };
-    } catch (ex) {
+    } catch (ex:any) {
+      console.error('Error creating product', ex.message);
       throw new NotFoundException({
         message: 'Product category not found',
         success: false,
@@ -128,67 +139,79 @@ export class CatalogService {
     };
   }
 
+  async getAllProducts() {
+    try {
+      const fetchedProducts = await this.productRepository
+        .createQueryBuilder('Products')
+        .leftJoinAndSelect('Products.category', 'categories')
+        .select([
+          'Products.id',
+          'Products.name',
+          'Products.brandname',
+          'Products.description',
+          'Products.price',
+          'Products.rating',
+          'Products.isActive',
+          'categories.id',
+          'categories.name',
+        ])
+        .getMany();
 
-  async getAllProducts(){
-    try{
-      const fetchedProducts = await this.productRepository.createQueryBuilder('Products').leftJoinAndSelect('Products.category','categories').select([
-        'Products.id',
-        'Products.name',
-        'Products.brandname',
-        'Products.description',
-        'Products.price',
-        'Products.rating',
-        'Products.isActive',
-        'categories.id',
-        'categories.name',
-      ]).getMany();
+      return {
+        message: 'Products fetched succesfully',
+        success: true,
+        statusCode: 200,
+        data: fetchedProducts,
+      };
+    } catch (err: any) {
+      throw new NotFoundException({
+        success: false,
+        message: 'Products not fetched',
+        statusCode: 500,
+        errmessage: err.message,
+      });
+    }
+  }
+
+  async getProductsByCategory(categoryId: string) {
+    const categoryProducts = await this.productRepository
+      .createQueryBuilder('products')
+      .select([
+        'products.id',
+        'products.name',
+        'products.brandname',
+        'products.description',
+        'products.price',
+        'products.rating',
+        'products.isActive',
+        'products.category_id',
+      ])
+      .where('products.category_id = :id', { id: categoryId })
+      .orderBy('products.price', 'ASC')
+      .limit(1)
+      .getMany();
 
     return {
-      message : "Products fetched succesfully",
-      success : true,
-      statusCode : 200,
-      data : fetchedProducts
+      message: 'Products fetched succesfully',
+      success: true,
+      statusCode: 200,
+      data: categoryProducts,
+    };
+  }
+
+  async deleteProduct(productId: string) {
+    const product = await this.productRepository.findOne({
+      where: { id: productId },
+    });
+    if (!product) {
+      throw new NotFoundException('Product not found');
     }
-  }catch(ex)
-  {
-    throw new NotFoundException({success : false,message : "Products not fetched",statusCode : 500,errmessage : ex.message});
+    await this.productRepository.softDelete({ id: productId });
+    return {
+      message: 'Product deleted succesfully',
+      success: true,
+      statusCode: 200,
+      data: product,
+    };
   }
-}
-
-async getProductsByCategory(categoryId:string){
-  const categoryProducts = await this.productRepository.createQueryBuilder('products').select(['products.id',
-    'products.name',
-    'products.brandname',
-    'products.description',
-    'products.price',
-    'products.rating',
-    'products.isActive',
-    'products.category_id'
-  ]).where('products.category_id = :id',{id:categoryId}).orderBy('products.price',"ASC").limit(1).getMany();
-
-  return {
-    message : "Products fetched succesfully",
-    success : true,
-    statusCode : 200,
-    data : categoryProducts
-  }
-}
-
-
-async deleteProduct(productId:string)
-
-{
-  const product = await this.productRepository.findOne({where:{id:productId}})
-  if(!product)
-  {
-    throw new NotFoundException("Product not found")
-  }
-  await this.productRepository.softDelete({id:productId})
-  return {
-    message : "Product deleted succesfully",
-    success : true,
-    statusCode : 200,
-    data : product
-  }
-}
 }

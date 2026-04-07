@@ -5,24 +5,24 @@ import {Column, CreateDateColumn, UpdateDateColumn, Entity, PrimaryGeneratedColu
 export class Category{
 
     @PrimaryGeneratedColumn('uuid')
-    id : string
+    id! : string
 
     @Column({length : 200})
-    name : string
+    name! : string
 
     @Column({nullable : true,length : 300})
-    description : string
+    description! : string
 
     @TreeChildren()
-    children : Category[]
+    children! : Category[]
 
     @TreeParent()
-    parent : Category
+    parent! : Category
 
     @CreateDateColumn()
-    createdAt : Date
+    createdAt! : Date
 
     @UpdateDateColumn()
-    updatedAt : Date
+    updatedAt! : Date
 
 }

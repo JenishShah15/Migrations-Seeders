@@ -8,6 +8,7 @@ import {
   createproductdto,
   createproductdto as CreateProductdto,
 } from './dto/createproduct.dto';
+import { updateProductDto } from './dto/updateproduct.dto';
 
 @Injectable()
 export class CatalogService {
@@ -93,10 +94,10 @@ export class CatalogService {
         category: category,
         userId: CreateProductDto.userId,
       });
-      
-      console.log('Successfull product creation', CreateProductDto);// working
+
+      console.log('Successfull product creation', CreateProductDto); // working
       const createdProduct = await this.productRepository.save(product);
-      console.log('Successfull product creation', CreateProductDto);//not working
+      console.log('Successfull product creation', CreateProductDto); //not working
 
       return {
         message: 'Product created succesfully',
@@ -104,7 +105,7 @@ export class CatalogService {
         statusCode: 201,
         data: createdProduct,
       };
-    } catch (ex:any) {
+    } catch (ex: any) {
       console.error('Error creating product', ex.message);
       throw new NotFoundException({
         message: 'Product category not found',
@@ -199,19 +200,67 @@ export class CatalogService {
     };
   }
 
-  async deleteProduct(productId: string) {
-    const product = await this.productRepository.findOne({
-      where: { id: productId },
+async updateProduct(updateproductdto: updateProductDto) {
+  const product = await this.productRepository.findOneBy({
+    id: updateproductdto.id,
+  });
+
+  if (!product) {
+    throw new NotFoundException('Product not found');
+  }
+
+  // 1. Update simple fields (only if they are provided in the DTO)
+  this.productRepository.merge(product, {
+    name: updateproductdto.name,
+    description: updateproductdto.description,
+    price: updateproductdto.price,
+    isActive: updateproductdto.isActive,
+  });
+
+  // 2. Handle the relationship separately
+  if (updateproductdto.category_id) {
+    const category = await this.categoryRepository.findOneBy({
+      id: updateproductdto.category_id,
     });
-    if (!product) {
-      throw new NotFoundException('Product not found');
+    if (category) {
+      product.category = category;
     }
-    await this.productRepository.softDelete({ id: productId });
-    return {
-      message: 'Product deleted succesfully',
-      success: true,
-      statusCode: 200,
-      data: product,
-    };
+  }
+
+  const updatedProduct = await this.productRepository.save(product);
+
+  return {
+    message: 'Product updated successfully',
+    success: true,
+    statusCode: 200,
+    data: updatedProduct,
+  };
+}
+
+  async deleteProduct(productId: string) {
+    console.log('code reached here', productId);
+    try {
+      const product = await this.productRepository.findOne({
+        where: { id: productId },
+      });
+      if (!product) {
+        throw new NotFoundException('Product not found');
+      }
+      await this.productRepository.softDelete({ id: productId });
+      return {
+        message: 'Product deleted succesfully',
+        success: true,
+        statusCode: 200,
+        data: product,
+      };
+    } catch (err: any) {
+      console.error('Error deleting product', err.message);
+      throw new NotFoundException({
+        message: 'Product not deleted',
+        success: false,
+        statusCode: 500,
+        errmessage: err.message,
+      });
+    }
   }
 }

@@ -13,7 +13,7 @@ async function  runseed() {
 
     }catch(error)
     {
-            console.error("seedign error",error);
+            console.error("seeding error",error);
         }
     
 }

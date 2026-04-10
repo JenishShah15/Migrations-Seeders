@@ -9,6 +9,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { Category } from './category.entity';
+import { Buffer } from 'buffer';
 
 @Entity('Products')
 export class Product {
@@ -39,6 +40,9 @@ export class Product {
   @ManyToOne(() => Category, (category) => category.id, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'category_id' })
   category?: Category;
+
+ @Column({type : 'bytea',nullable : true})
+  imageUrl?: Buffer;
 
   @CreateDateColumn()
   createdAt?: Date;

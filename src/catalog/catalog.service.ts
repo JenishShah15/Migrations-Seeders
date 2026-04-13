@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Category } from './entities/category.entity';
 import { Repository, TreeRepository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -9,6 +13,7 @@ import {
   createproductdto as CreateProductdto,
 } from './dto/createproduct.dto';
 import { updateProductDto } from './dto/updateproduct.dto';
+import { generateProductCode } from 'src/utils/generateProductCode';
 
 @Injectable()
 export class CatalogService {
@@ -80,6 +85,27 @@ export class CatalogService {
       const category = await this.categoryRepository.findOne({
         where: { id: CreateProductDto.category_id },
       });
+
+      const prodcode = generateProductCode(
+        CreateProductDto.name,
+        CreateProductDto.brandname,
+      );
+
+      const matchedProduct = await this.productRepository
+        .createQueryBuilder('product')
+        .where('product.productcode = :productcode', { productcode: prodcode })
+        .andWhere('product.userId = :userId', { userId: CreateProductDto.userId })
+        .andWhere('product.category_id = :categoryId', {
+          categoryId: CreateProductDto.category_id,
+        })
+        .getManyAndCount();
+      console.log(matchedProduct[0]);
+
+      if (matchedProduct[1] > 0)
+        throw new ConflictException(
+          'Product with same name and brand already exists ',
+        );
+
       if (!category) {
         throw new NotFoundException('Category not found');
       }
@@ -92,12 +118,12 @@ export class CatalogService {
         rating: CreateProductDto.rating,
         isActive: CreateProductDto.isActive,
         category: category,
+        productcode: prodcode,
         userId: CreateProductDto.userId,
       });
 
-      console.log('Successfull product creation', CreateProductDto); // working
       const createdProduct = await this.productRepository.save(product);
-      console.log('Successfull product creation', CreateProductDto); //not working
+      console.log('Successfull product creation', CreateProductDto); // working
 
       return {
         message: 'Product created succesfully',
@@ -106,12 +132,11 @@ export class CatalogService {
         data: createdProduct,
       };
     } catch (ex: any) {
-      console.error('Error creating product', ex.message);
-      throw new NotFoundException({
-        message: 'Product category not found',
+      return {
+        message: ex.message,
         success: false,
-        statusCode: 404,
-      });
+        statusCode: 502,
+      };
     }
   }
 
@@ -200,42 +225,42 @@ export class CatalogService {
     };
   }
 
-async updateProduct(updateproductdto: updateProductDto) {
-  const product = await this.productRepository.findOneBy({
-    id: updateproductdto.id,
-  });
-
-  if (!product) {
-    throw new NotFoundException('Product not found');
-  }
-
-  // 1. Update simple fields (only if they are provided in the DTO)
-  this.productRepository.merge(product, {
-    name: updateproductdto.name,
-    description: updateproductdto.description,
-    price: updateproductdto.price,
-    isActive: updateproductdto.isActive,
-  });
-
-  // 2. Handle the relationship separately
-  if (updateproductdto.category_id) {
-    const category = await this.categoryRepository.findOneBy({
-      id: updateproductdto.category_id,
+  async updateProduct(updateproductdto: updateProductDto) {
+    const product = await this.productRepository.findOneBy({
+      id: updateproductdto.id,
     });
-    if (category) {
-      product.category = category;
+
+    if (!product) {
+      throw new NotFoundException('Product not found');
     }
+
+    // 1. Update simple fields (only if they are provided in the DTO)
+    this.productRepository.merge(product, {
+      name: updateproductdto.name,
+      description: updateproductdto.description,
+      price: updateproductdto.price,
+      isActive: updateproductdto.isActive,
+    });
+
+    // 2. Handle the relationship separately
+    if (updateproductdto.category_id) {
+      const category = await this.categoryRepository.findOneBy({
+        id: updateproductdto.category_id,
+      });
+      if (category) {
+        product.category = category;
+      }
+    }
+
+    const updatedProduct = await this.productRepository.save(product);
+
+    return {
+      message: 'Product updated successfully',
+      success: true,
+      statusCode: 200,
+      data: updatedProduct,
+    };
   }
-
-  const updatedProduct = await this.productRepository.save(product);
-
-  return {
-    message: 'Product updated successfully',
-    success: true,
-    statusCode: 200,
-    data: updatedProduct,
-  };
-}
 
   async deleteProduct(productId: string) {
     console.log('code reached here', productId);

@@ -41,6 +41,9 @@ export class Product {
   @JoinColumn({ name: 'category_id' })
   category?: Category;
 
+  @Column({nullable : true,length : 200})
+  productcode?: string; 
+
  @Column({type : 'bytea',nullable : true})
   imageUrl?: Buffer;
 
